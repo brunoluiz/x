@@ -1,0 +1,134 @@
+version: "2"
+run:
+  modules-download-mode: readonly
+output:
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
+linters:
+  enable:
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - contextcheck
+    - embeddedstructfieldcheck
+    - copyloopvar # detects places where loop variables are copied (Go 1.22+)
+    - dupl # tool for code clone detection
+    - durationcheck # checks for two durations multiplied together
+    - errcheck # checking for unchecked errors, these unchecked errors can be critical bugs in some cases
+    - errname # checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error
+    - errorlint # finds code that will cause problems with the error wrapping scheme introduced in Go 1.13
+    - exptostd # detects functions from golang.org/x/exp/ that can be replaced by std functions
+    - forbidigo # forbids identifiers
+    - funlen # tool for detection of long functions
+    - funcorder # checks the order of functions, methods, and constructors
+    - gochecknoglobals # checks that no global variables exist
+    - gochecknoinits
+    - gochecknoinits # checks that no init functions are present in Go code
+    - gochecksumtype # checks exhaustiveness on Go "sum types"
+    - goconst # finds repeated strings that could be replaced by a constant
+    - gocritic
+    - gocyclo
+    - gosec
+    - govet
+    - iface # checks the incorrect use of interfaces, helping developers avoid interface pollution
+    - ineffassign # detects when assignments to existing variables are not used
+    - nakedret # finds naked returns in functions greater than a specified function length
+    - nestif # reports deeply nested if statements
+    - nilerr # finds the code that returns nil even if it checks that the error is not nil
+    - nilnesserr # reports that it checks for err != nil, but it returns a different nil value error (powered by nilness and nilerr)
+    - nilnil # checks that there is no simultaneous return of nil error and an invalid value
+    - noctx # finds sending http request without context.Context
+    - nonamedreturns # reports all named returns
+    - revive
+    - sloglint # ensure consistent code style when using log/slog
+    - spancheck # checks for mistakes with OpenTelemetry/Census spans
+    - sqlclosecheck # checks that sql.Rows and sql.Stmt are closed
+    - staticcheck
+    - testableexamples # checks if examples are testable (have an expected output)
+    - testpackage # makes you use a separate _test package
+    - tparallel # detects inappropriate usage of t.Parallel() method in your Go test codes
+    - unconvert # removes unnecessary type conversions
+    - unused # checks for unused constants, variables, functions and types
+    - usestdlibvars # detects the possibility to use variables/constants from the Go standard library
+    - whitespace # detects leading and trailing whitespace
+
+    # - depguard # checks if package imports are in a list of acceptable packages
+  settings:
+    dupl:
+      threshold: 100
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    govet:
+      # Enable all analyzers.
+      enable-all: true
+      disable:
+        - fieldalignment # too strict
+      settings:
+        shadow:
+          strict: true
+    sloglint:
+      # Enforce not using global loggers.
+      no-global: all
+      # Enforce using methods that accept a context.
+      context: all
+    embeddedstructfieldcheck:
+      # Checks that sync.Mutex and sync.RWMutex are not used as embedded fields.
+      forbid-mutex: true
+    funcorder:
+      # Checks that constructors are placed after the structure declaration.
+      constructor: false
+      # Checks if the exported methods of a structure are placed before the non-exported ones.
+      struct-method: false
+      # Checks if the constructors and/or structure methods are sorted alphabetically.
+      alphabetical: true
+    funlen:
+      # Checks the number of lines in a function.
+      lines: 100
+      # Checks the number of statements in a function.
+      statements: 50
+    forbidigo:
+      # Forbid the following identifiers (list of regexp).
+      # Default: ["^(fmt\\.Print(|f|ln)|print|println)$"]
+      forbid:
+        - pattern: "^(fmt\\.Print(|f|ln)|print|println)$"
+          msg: Do not commit print statements.
+        - pattern: ^spew\.(ConfigState\.)?Dump$
+          msg: Do not commit dump statements.
+        - pattern: ^reflect.DeepEqual$
+          msg: Do not use reflect.DeepEqual, use github.com/google/go-cmp instead.
+        - pattern: ^http.DefaultClient$
+          msg: Do not use http.DefaultClient, create a custom `*http.Client` with sensible timeouts
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+    rules:
+      - path: '(.+)_test\.go'
+        linters:
+          - funlen
+          - goconst
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

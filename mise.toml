@@ -1,0 +1,4 @@
+[tools]
+gofumpt = "0.9.1"
+golangci-lint = "2.5.0"
+lefthook = "1.13.6"
