@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-	"github.com/brunoluiz/x/apperr"
+	"github.com/brunoluiz/x/errx"
 	"github.com/samber/oops"
 )
 
@@ -30,13 +30,13 @@ func ErrorLogger(logger *slog.Logger) connect.UnaryInterceptorFunc {
 				}
 
 				switch oopsErr.Code() {
-				case apperr.CodeNotFound.String():
+				case errx.CodeNotFound.String():
 					level = slog.LevelWarn
 					connectErr = connect.NewError(connect.CodeNotFound, publicErr)
-				case apperr.CodeValidation.String():
+				case errx.CodeValidation.String():
 					level = slog.LevelWarn
 					connectErr = connect.NewError(connect.CodeInvalidArgument, publicErr)
-				case apperr.CodeConflict.String():
+				case errx.CodeConflict.String():
 					level = slog.LevelWarn
 					connectErr = connect.NewError(connect.CodeAlreadyExists, publicErr)
 				default:

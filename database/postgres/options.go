@@ -1,12 +1,19 @@
 package postgres
 
 import (
+	"io/fs"
 	"time"
 
 	"github.com/hellofresh/health-go/v5"
 )
 
 type option func(*config)
+
+func WithMigration(embed fs.FS) func(*config) {
+	return func(c *config) {
+		c.migration = embed
+	}
+}
 
 func WithMaxOpenConns(n int) func(*config) {
 	return func(c *config) {

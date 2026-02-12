@@ -5,74 +5,29 @@ import (
 	"os"
 )
 
-const (
-	HandlerTypeUnknown HandlerType = iota
-	HandlerTypeJSON
-	HandlerTypeText
-	HandlerTypeNoop
-)
-
-type Option func(*config)
-
-type HandlerType int
-
-type config struct {
-	level   slog.Level
-	handler HandlerType
-}
+type Option func(*slog.HandlerOptions)
 
 func WithLevel(level string) Option {
-	return func(o *config) {
+	return func(o *slog.HandlerOptions) {
 		switch level {
 		case "debug":
-			o.level = slog.LevelDebug
+			o.Level = slog.LevelDebug
 		case "info":
-			o.level = slog.LevelInfo
+			o.Level = slog.LevelInfo
 		case "warn":
-			o.level = slog.LevelWarn
+			o.Level = slog.LevelWarn
 		case "error":
-			o.level = slog.LevelError
+			o.Level = slog.LevelError
 		default:
-			o.level = slog.LevelInfo
-		}
-	}
-}
-
-func WithType(t HandlerType) Option {
-	return func(o *config) {
-		switch t {
-		case HandlerTypeText:
-			o.handler = HandlerTypeText
-		case HandlerTypeNoop:
-			o.handler = HandlerTypeNoop
-		case HandlerTypeJSON:
-			fallthrough
-		default:
-			o.handler = HandlerTypeJSON
+			o.Level = slog.LevelInfo
 		}
 	}
 }
 
 func New(opts ...Option) *slog.Logger {
-	cfg := config{
-		level:   slog.LevelInfo,
-		handler: HandlerTypeJSON,
-	}
+	handlerOpts := &slog.HandlerOptions{}
 	for _, opt := range opts {
-		opt(&cfg)
+		opt(handlerOpts)
 	}
-
-	handlerOpts := &slog.HandlerOptions{
-		Level: cfg.level,
-	}
-	switch cfg.handler {
-	case HandlerTypeNoop:
-		return slog.New(slog.DiscardHandler)
-	case HandlerTypeText:
-		return slog.New(slog.NewTextHandler(os.Stdout, handlerOpts))
-	case HandlerTypeJSON:
-		fallthrough
-	default:
-		return slog.New(slog.NewJSONHandler(os.Stdout, handlerOpts))
-	}
+	return slog.New(slog.NewJSONHandler(os.Stdout, handlerOpts))
 }
