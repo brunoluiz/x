@@ -3,23 +3,17 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"io/fs"
+	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/XSAM/otelsql"
-	"github.com/brunoluiz/x/errx"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"github.com/hellofresh/health-go/v5"
 	_ "github.com/jackc/pgx/stdlib" // registers pgx driver for database/sql
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
 type config struct {
-	migration       fs.FS
 	maxOpenConns    int
 	maxIdleConns    int
 	connMaxLifetime time.Duration
@@ -73,13 +67,6 @@ func New(ctx context.Context, dsn string, logger *slog.Logger, opts ...option) (
 		return nil, pingErr
 	}
 
-	if c.migration != nil {
-		if migrateErr := up(db.Conn, c.migration, c.logger); migrateErr != nil {
-			db.Conn.Close()
-			return nil, migrateErr
-		}
-	}
-
 	if c.health != nil {
 		if registerErr := c.health.Register(health.Config{
 			Name:    "postgres",
@@ -87,34 +74,11 @@ func New(ctx context.Context, dsn string, logger *slog.Logger, opts ...option) (
 			Check:   db.Health,
 		}); registerErr != nil {
 			db.Conn.Close()
-			return nil, errx.ErrInternal.Wrap(registerErr)
+			return nil, registerErr
 		}
 	}
 
 	return db, nil
-}
-
-func up(db *sql.DB, fs fs.FS, _ *slog.Logger) error {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		return errx.ErrInternal.Wrap(err)
-	}
-
-	src, err := iofs.New(fs, "migrations")
-	if err != nil {
-		return errx.ErrInternal.New("migrations directory not found in embedded filesystem")
-	}
-
-	m, err := migrate.NewWithInstance("iofs", src, "postgres", driver)
-	if err != nil {
-		return errx.ErrInternal.Wrap(err)
-	}
-
-	if upErr := m.Up(); !errors.Is(upErr, migrate.ErrNoChange) {
-		return errx.ErrInternal.Wrapf(err, "migration failed")
-	}
-
-	return nil
 }
 
 func (db *DB) ping(ctx context.Context, timeout time.Duration, maxRetries int) error {
@@ -143,7 +107,7 @@ func (db *DB) ping(ctx context.Context, timeout time.Duration, maxRetries int) e
 func (db *DB) Health(ctx context.Context) error {
 	// Basic ping check
 	if err := db.Conn.PingContext(ctx); err != nil {
-		return errx.ErrInternal.Wrapf(err, "database health check failed: ping")
+		return fmt.Errorf("database health check failed (ping): %w", err)
 	}
 
 	// Check connection pool stats
@@ -162,7 +126,7 @@ func (db *DB) Health(ctx context.Context) error {
 
 	// Simple query to verify database is responsive
 	if err := db.Conn.QueryRowContext(ctx, "SELECT 1").Scan(new(int)); err != nil {
-		return errx.ErrInternal.Wrapf(err, "database health check failed: query")
+		return fmt.Errorf("database health check failed (query): %w", err)
 	}
 
 	return nil
