@@ -8,7 +8,7 @@ import (
 	"net/http/pprof"
 
 	"github.com/brunoluiz/x/closer"
-	"github.com/brunoluiz/x/httpx"
+	httpx "github.com/brunoluiz/x/http"
 	"github.com/hellofresh/health-go/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

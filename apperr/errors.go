@@ -1,4 +1,4 @@
-package errx
+package apperr
 
 import "github.com/samber/oops"
 

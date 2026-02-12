@@ -1,0 +1,13 @@
+go 1.25.7
+
+use (
+	./app
+	./apperr
+	./closer
+	./genid
+	./http
+	./logger
+	./o11y
+	./otel
+	./postgres
+)
