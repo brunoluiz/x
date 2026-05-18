@@ -29,7 +29,7 @@ func (rec *statusRecorder) Write(data []byte) (int, error) {
 	return n, err
 }
 
-func LoggerMiddleware(logger interface {
+func Logger(logger interface {
 	Info(string, ...any)
 },
 ) Middleware {
