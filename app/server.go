@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"github.com/alecthomas/kong"
-	"github.com/brunoluiz/x/closer"
 	"github.com/brunoluiz/x/logger"
 	"github.com/brunoluiz/x/o11y"
 	"github.com/brunoluiz/x/otel"
@@ -53,7 +52,8 @@ func runServer[T ServerExec](ctx context.Context, cfg *serverConfig, logger *slo
 	if err != nil {
 		return fmt.Errorf("failed to setup otel: %w", err)
 	}
-	defer closer.WithLogContext(ctx, logger, "failed to shutdown otel", otelShutdown)
+	//nolint:errcheck
+	defer otelShutdown(ctx)
 
 	healthz, err := health.New()
 	if err != nil {
@@ -65,9 +65,7 @@ func runServer[T ServerExec](ctx context.Context, cfg *serverConfig, logger *slo
 
 	eg, ctx := errgroup.WithContext(appCtx)
 	eg.Go(func() error {
-		return o11y.Run(ctx, logger, healthz,
-			o11y.WithAddr(cfg.O11yHost, cfg.O11yPort),
-		)
+		return o11y.Run(ctx, logger, o11y.WithAddr(cfg.O11yHost, cfg.O11yPort), o11y.WithHealthz(healthz.Handler()))
 	})
 
 	eg.Go(func() error {

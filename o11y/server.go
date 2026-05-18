@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/brunoluiz/x/closer"
 	"github.com/brunoluiz/x/httpx"
 )
 
@@ -63,7 +62,7 @@ func Run(ctx context.Context, logger *slog.Logger, opts ...Option) error {
 	}
 
 	srv := httpx.New(o.addr, mux, httpx.WithName("o11y"), httpx.WithLogger(logger))
-	defer closer.WithLogContext(ctx, logger, "failed to shutdown o11y server", srv.Close)
+	defer srv.Close(ctx)
 
 	return srv.Run(ctx)
 }

@@ -3,8 +3,6 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"io/fs"
-	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -12,19 +10,16 @@ import (
 )
 
 type config struct {
-	migration       fs.FS
 	maxOpenConns    int32
 	connMaxLifetime time.Duration
 	connMaxIdleTime time.Duration
-	logger          *slog.Logger
 }
 
 type DB struct {
-	pool   *pgxpool.Pool
-	logger *slog.Logger
+	pool *pgxpool.Pool
 }
 
-func New(ctx context.Context, dsn string, logger *slog.Logger, opts ...option) (*DB, error) {
+func New(ctx context.Context, dsn string, opts ...option) (*DB, error) {
 	c := &config{
 		maxOpenConns:    25,
 		connMaxLifetime: 5 * time.Minute,
@@ -49,7 +44,7 @@ func New(ctx context.Context, dsn string, logger *slog.Logger, opts ...option) (
 		return nil, err
 	}
 
-	db := &DB{pool: pool, logger: logger}
+	db := &DB{pool: pool}
 	if pingErr := db.Health(ctx); pingErr != nil {
 		db.pool.Close()
 		return nil, pingErr
