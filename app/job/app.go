@@ -2,7 +2,6 @@ package job
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -10,18 +9,17 @@ import (
 
 	"github.com/alecthomas/kong"
 	"github.com/brunoluiz/x/logger"
-	"golang.org/x/sync/errgroup"
 )
 
 type config struct {
 	LogLevel string `enum:"debug,info,warn,error" kong:"default=info,env=LOG_LEVEL,name=log-level"`
 }
 
-type JobExec interface {
+type Exec interface {
 	Run(ctx context.Context, logger *slog.Logger) error
 }
 
-func New[T JobExec](exec T) {
+func New[T Exec](exec T) {
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	cfg := &config{}
@@ -34,18 +32,6 @@ func New[T JobExec](exec T) {
 	}
 }
 
-func run[T JobExec](ctx context.Context, logger *slog.Logger, exec T) error {
-	appCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	eg, ctx := errgroup.WithContext(appCtx)
-	eg.Go(func() error {
-		return exec.Run(ctx, logger)
-	})
-
-	if egErr := eg.Wait(); egErr != nil {
-		return fmt.Errorf("application error: %w", egErr)
-	}
-
-	return nil
+func run[T Exec](ctx context.Context, logger *slog.Logger, exec T) error {
+	return exec.Run(ctx, logger)
 }
