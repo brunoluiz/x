@@ -29,26 +29,28 @@ func (rec *statusRecorder) Write(data []byte) (int, error) {
 	return n, err
 }
 
-func Logger(logger interface {
+func LoggerMiddleware(logger interface {
 	Info(string, ...any)
-}, next http.Handler,
-) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		rec := &statusRecorder{ResponseWriter: w}
-		next.ServeHTTP(rec, r)
-		duration := time.Since(start)
+},
+) Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			rec := &statusRecorder{ResponseWriter: w}
+			next.ServeHTTP(rec, r)
+			duration := time.Since(start)
 
-		logger.Info(
-			"http request",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"query", r.URL.RawQuery,
-			"status", rec.status,
-			"bytes", rec.bytes,
-			"duration_ms", duration.Milliseconds(),
-			"remote_addr", r.RemoteAddr,
-			"user_agent", r.UserAgent(),
-		)
-	})
+			logger.Info(
+				"http request",
+				"method", r.Method,
+				"path", r.URL.Path,
+				"query", r.URL.RawQuery,
+				"status", rec.status,
+				"bytes", rec.bytes,
+				"duration_ms", duration.Milliseconds(),
+				"remote_addr", r.RemoteAddr,
+				"user_agent", r.UserAgent(),
+			)
+		})
+	}
 }
