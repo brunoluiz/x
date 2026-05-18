@@ -70,6 +70,6 @@ func (db *DB) Health(ctx context.Context) error {
 	return nil
 }
 
-func (db *DB) GetPool() *pgxpool.Pool {
+func (db *DB) Get() *pgxpool.Pool {
 	return db.pool
 }
