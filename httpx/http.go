@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"time"
 )
@@ -13,8 +12,10 @@ type Server struct {
 	*http.Server
 
 	name            string
-	logger          *slog.Logger
 	shutdownTimeout time.Duration
+	logger          interface {
+		Info(string, ...any)
+	}
 }
 
 type ServerOption func(*Server)
@@ -25,7 +26,10 @@ func WithShutdownTimeout(d time.Duration) ServerOption {
 	}
 }
 
-func WithLogger(logger *slog.Logger) ServerOption {
+func WithLogger(logger interface {
+	Info(string, ...any)
+},
+) ServerOption {
 	return func(s *Server) {
 		s.logger = logger
 	}
@@ -57,7 +61,7 @@ func New(addr string, handler http.Handler, opts ...ServerOption) *Server {
 		},
 		name:            "app",
 		shutdownTimeout: 5 * time.Second,
-		logger:          slog.New(slog.DiscardHandler),
+		logger:          nil,
 	}
 
 	for _, opt := range opts {
@@ -71,7 +75,9 @@ func (s *Server) Run(ctx context.Context) error {
 	errChan := make(chan error, 1)
 
 	go func() {
-		s.logger.InfoContext(ctx, "starting server", slog.String("address", s.Addr), slog.String("name", s.name))
+		if s.logger != nil {
+			s.logger.Info("starting server", "address", s.Addr, "name", s.name)
+		}
 		if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- err
 		}
