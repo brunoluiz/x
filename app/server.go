@@ -48,7 +48,7 @@ func Server[T ServerExec](exec T) {
 }
 
 func runServer[T ServerExec](ctx context.Context, cfg *serverConfig, logger *slog.Logger, exec T) error {
-	otelShutdown, err := otel.SetupOTelSDK(ctx)
+	otelShutdown, err := otel.Setup(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to setup otel: %w", err)
 	}

@@ -3,13 +3,14 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"strings"
 )
 
 type Option func(*slog.HandlerOptions)
 
 func WithLevel(level string) Option {
 	return func(o *slog.HandlerOptions) {
-		switch level {
+		switch strings.ToLower(level) {
 		case "debug":
 			o.Level = slog.LevelDebug
 		case "info":

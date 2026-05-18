@@ -3,23 +3,21 @@ package otel
 import (
 	"context"
 	"errors"
-	"os"
 	"time"
 
+	"github.com/go-logr/logr"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	"go.opentelemetry.io/otel/exporters/prometheus"
-	"go.opentelemetry.io/otel/exporters/stdout/stdoutmetric"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
-// SetupOTelSDK bootstraps the OpenTelemetry pipeline.
+// Setup bootstraps the OpenTelemetry pipeline.
 // If it does not return an error, make sure to call shutdown for proper cleanup.
-func SetupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
+func Setup(ctx context.Context) (func(context.Context) error, error) {
 	var shutdownFuncs []func(context.Context) error
 	var err error
 
@@ -35,6 +33,7 @@ func SetupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 	// Set up propagator.
 	prop := newPropagator()
 	otel.SetTextMapPropagator(prop)
+	otel.SetLogger(logr.Discard())
 
 	// Set up trace provider.
 	tracerProvider, err := newTracerProvider(ctx)
@@ -63,48 +62,24 @@ func newPropagator() propagation.TextMapPropagator {
 }
 
 func newTracerProvider(ctx context.Context) (*sdktrace.TracerProvider, error) {
-	switch exporter := os.Getenv("OTEL_TRACES_EXPORTER"); exporter {
-	case "otlp":
-		exp, err := otlptracehttp.New(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		return sdktrace.NewTracerProvider(
-			sdktrace.WithBatcher(exp),
-			sdktrace.WithResource(resource.Default()),
-		), nil
-	default:
-		return sdktrace.NewTracerProvider(), nil
+	exp, err := otlptracehttp.New(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	return sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exp),
+		sdktrace.WithResource(resource.Default()),
+	), nil
 }
 
 func newMeterProvider(ctx context.Context) (*metric.MeterProvider, error) {
-	switch os.Getenv("OTEL_METRICS_EXPORTER") {
-	case "console":
-		exp, err := stdoutmetric.New()
-		if err != nil {
-			return nil, err
-		}
-
-		return metric.NewMeterProvider(
-			metric.WithReader(metric.NewPeriodicReader(exp, metric.WithInterval(3*time.Second))),
-		), nil
-	case "otlp":
-		exp, err := otlpmetrichttp.New(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		return metric.NewMeterProvider(
-			metric.WithReader(metric.NewPeriodicReader(exp, metric.WithInterval(3*time.Second))),
-		), nil
-	default:
-		prometheus, err := prometheus.New()
-		if err != nil {
-			return nil, err
-		}
-
-		return metric.NewMeterProvider(metric.WithReader(prometheus)), nil
+	exp, err := otlpmetrichttp.New(ctx)
+	if err != nil {
+		return nil, err
 	}
+
+	return metric.NewMeterProvider(
+		metric.WithReader(metric.NewPeriodicReader(exp, metric.WithInterval(3*time.Second))),
+	), nil
 }
