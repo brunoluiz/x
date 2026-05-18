@@ -15,9 +15,26 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
+type Option func(*config)
+
+type config struct {
+	errorHandler otel.ErrorHandler
+}
+
+func WithErrorHandler(h otel.ErrorHandler) Option {
+	return func(c *config) {
+		c.errorHandler = h
+	}
+}
+
 // Setup bootstraps the OpenTelemetry pipeline.
 // If it does not return an error, make sure to call shutdown for proper cleanup.
-func Setup(ctx context.Context) (func(context.Context) error, error) {
+func Setup(ctx context.Context, opts ...Option) (func(context.Context) error, error) {
+	var cfg config
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	var shutdownFuncs []func(context.Context) error
 	var err error
 
@@ -30,12 +47,14 @@ func Setup(ctx context.Context) (func(context.Context) error, error) {
 		return shutdownErr
 	}
 
-	// Set up propagator.
 	prop := newPropagator()
 	otel.SetTextMapPropagator(prop)
 	otel.SetLogger(logr.Discard())
 
-	// Set up trace provider.
+	if cfg.errorHandler != nil {
+		otel.SetErrorHandler(cfg.errorHandler)
+	}
+
 	tracerProvider, err := newTracerProvider(ctx)
 	if err != nil {
 		return shutdown, errors.Join(err, shutdown(ctx))
@@ -43,7 +62,6 @@ func Setup(ctx context.Context) (func(context.Context) error, error) {
 	shutdownFuncs = append(shutdownFuncs, tracerProvider.Shutdown)
 	otel.SetTracerProvider(tracerProvider)
 
-	// Set up meter provider.
 	meterProvider, err := newMeterProvider(ctx)
 	if err != nil {
 		return shutdown, errors.Join(err, shutdown(ctx))

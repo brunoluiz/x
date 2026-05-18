@@ -1,4 +1,4 @@
-package app
+package job
 
 import (
 	"context"
@@ -13,28 +13,28 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type cliConfig struct {
+type config struct {
 	LogLevel string `enum:"debug,info,warn,error" kong:"default=info,env=LOG_LEVEL,name=log-level"`
 }
 
-type CLIExec interface {
+type JobExec interface {
 	Run(ctx context.Context, logger *slog.Logger) error
 }
 
-func CLI[T CLIExec](exec T) {
+func New[T JobExec](exec T) {
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
-	cfg := &cliConfig{}
+	cfg := &config{}
 	kong.Parse(exec, kong.Embed(cfg))
 
 	logger := logger.New(logger.WithLevel(cfg.LogLevel))
-	if err := runCLI(ctx, logger, exec); err != nil {
+	if err := run(ctx, logger, exec); err != nil {
 		logger.ErrorContext(ctx, "application error", "error", err)
 		os.Exit(1)
 	}
 }
 
-func runCLI[T CLIExec](ctx context.Context, logger *slog.Logger, exec T) error {
+func run[T JobExec](ctx context.Context, logger *slog.Logger, exec T) error {
 	appCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 

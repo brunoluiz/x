@@ -1,4 +1,4 @@
-package app
+package process
 
 import (
 	"context"
@@ -24,30 +24,30 @@ const (
 	EnvLocal      Env = "local"
 )
 
-type serverConfig struct {
+type config struct {
 	LogLevel string `enum:"debug,info,warn,error" kong:"default=info,env=LOG_LEVEL,name=log-level"`
 	O11yHost string `kong:"default=0.0.0.0,env=O11Y_HOST,name=o11y-host"`
 	O11yPort int    `kong:"default=9090,env=O11Y_PORT,name=o11y-port"`
 }
 
-type ServerExec interface {
+type Exec interface {
 	Run(ctx context.Context, logger *slog.Logger, healthz *health.Health) error
 }
 
-func Server[T ServerExec](exec T) {
+func New[T Exec](exec T) {
 	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
-	cfg := &serverConfig{}
+	cfg := &config{}
 	kong.Parse(exec, kong.Embed(cfg))
 
 	logger := logger.New(logger.WithLevel(cfg.LogLevel))
-	if err := runServer(ctx, cfg, logger, exec); err != nil {
+	if err := run(ctx, cfg, logger, exec); err != nil {
 		logger.ErrorContext(ctx, "application error", "error", err)
 		os.Exit(1)
 	}
 }
 
-func runServer[T ServerExec](ctx context.Context, cfg *serverConfig, logger *slog.Logger, exec T) error {
+func run[T Exec](ctx context.Context, cfg *config, logger *slog.Logger, exec T) error {
 	otelShutdown, err := otel.Setup(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to setup otel: %w", err)
