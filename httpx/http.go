@@ -57,6 +57,10 @@ func New(addr string, handler http.Handler, opts ...ServerOption) *Server {
 			Addr:              addr,
 			Handler:           handler,
 			ReadHeaderTimeout: 10 * time.Second,
+			ReadTimeout:       10 * time.Second,
+			WriteTimeout:      10 * time.Second,
+			IdleTimeout:       60 * time.Second,
+			MaxHeaderBytes:    1 << 20,
 			Protocols:         p,
 		},
 		name:            "app",
@@ -71,6 +75,30 @@ func New(addr string, handler http.Handler, opts ...ServerOption) *Server {
 	return s
 }
 
+func WithReadTimeout(d time.Duration) ServerOption {
+	return func(s *Server) {
+		s.ReadTimeout = d
+	}
+}
+
+func WithWriteTimeout(d time.Duration) ServerOption {
+	return func(s *Server) {
+		s.WriteTimeout = d
+	}
+}
+
+func WithIdleTimeout(d time.Duration) ServerOption {
+	return func(s *Server) {
+		s.IdleTimeout = d
+	}
+}
+
+func WithMaxHeaderBytes(n int) ServerOption {
+	return func(s *Server) {
+		s.MaxHeaderBytes = n
+	}
+}
+
 func (s *Server) Run(ctx context.Context) error {
 	errChan := make(chan error, 1)
 
@@ -80,7 +108,9 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 		if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- err
+			return
 		}
+		errChan <- nil
 	}()
 
 	select {
