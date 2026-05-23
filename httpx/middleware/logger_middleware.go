@@ -5,9 +5,6 @@ import (
 	"time"
 )
 
-// Middleware defines a standard HTTP middleware signature.
-type Middleware func(http.Handler) http.Handler
-
 type statusRecorder struct {
 	http.ResponseWriter
 
