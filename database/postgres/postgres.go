@@ -22,7 +22,7 @@ type DB struct {
 func New(ctx context.Context, dsn string, opts ...option) (*DB, error) {
 	c := &config{
 		maxOpenConns:    25,
-		connMaxLifetime: 5 * time.Minute,
+		connMaxLifetime: 30 * time.Minute,
 		connMaxIdleTime: 5 * time.Minute,
 	}
 	for _, opt := range opts {
