@@ -35,9 +35,9 @@ func WithLogger(logger interface {
 	}
 }
 
-func WithAddr(addr string) ServerOption {
+func WithAddr(host string, port int) ServerOption {
 	return func(s *Server) {
-		s.Addr = addr
+		s.Addr = fmt.Sprintf("%s:%d", host, port)
 	}
 }
 
@@ -47,14 +47,14 @@ func WithName(name string) ServerOption {
 	}
 }
 
-func New(addr string, handler http.Handler, opts ...ServerOption) *Server {
+func New(handler http.Handler, opts ...ServerOption) *Server {
 	p := new(http.Protocols)
 	p.SetHTTP1(true)
 	p.SetUnencryptedHTTP2(true)
 
 	s := &Server{
 		Server: &http.Server{
-			Addr:              addr,
+			Addr:              "0.0.0.0:4000",
 			Handler:           handler,
 			ReadHeaderTimeout: 10 * time.Second,
 			ReadTimeout:       10 * time.Second,

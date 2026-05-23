@@ -62,7 +62,7 @@ func Run(ctx context.Context, logger *slog.Logger, opts ...Option) error {
 		mux.Handle("/debug", o.pprof)
 	}
 
-	srv := httpx.New(o.addr, mux, httpx.WithName("o11y"), httpx.WithLogger(logger))
+	srv := httpx.New(mux, httpx.WithName("o11y"), httpx.WithLogger(logger))
 	defer srv.Close(ctx)
 
 	return srv.Run(ctx)
