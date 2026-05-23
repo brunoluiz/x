@@ -2,7 +2,6 @@ package o11y
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -12,7 +11,8 @@ import (
 type Option func(*options)
 
 type options struct {
-	addr       string
+	host       string
+	port       int
 	pprof      http.Handler
 	prometheus http.Handler
 	healthz    http.Handler
@@ -20,7 +20,8 @@ type options struct {
 
 func WithAddr(host string, port int) Option {
 	return func(o *options) {
-		o.addr = fmt.Sprintf("%s:%d", host, port)
+		o.host = host
+		o.port = port
 	}
 }
 
@@ -45,7 +46,8 @@ func WithHealthz(h http.Handler) Option {
 func Run(ctx context.Context, logger *slog.Logger, opts ...Option) error {
 	o := &options{
 		// defaults to 0.0.0.0 for dockerised workloads
-		addr: "0.0.0.0:9090",
+		host: "0.0.0.0",
+		port: 9090,
 	}
 	for _, opt := range opts {
 		opt(o)
@@ -62,7 +64,12 @@ func Run(ctx context.Context, logger *slog.Logger, opts ...Option) error {
 		mux.Handle("/debug", o.pprof)
 	}
 
-	srv := httpx.New(mux, httpx.WithName("o11y"), httpx.WithLogger(logger))
+	srv := httpx.New(
+		mux,
+		httpx.WithName("o11y"),
+		httpx.WithLogger(logger),
+		httpx.WithAddr(o.host, o.port),
+	)
 	defer srv.Close(ctx)
 
 	return srv.Run(ctx)
