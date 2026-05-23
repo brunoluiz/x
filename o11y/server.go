@@ -44,6 +44,7 @@ func WithHealthz(h http.Handler) Option {
 
 func Run(ctx context.Context, logger *slog.Logger, opts ...Option) error {
 	o := &options{
+		// defaults to 0.0.0.0 for dockerised workloads
 		addr: "0.0.0.0:9090",
 	}
 	for _, opt := range opts {

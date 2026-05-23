@@ -48,7 +48,7 @@ func New[T Exec](exec T) {
 }
 
 func run[T Exec](ctx context.Context, cfg *config, logger *slog.Logger, exec T) error {
-	otelShutdown, err := otel.Setup(ctx)
+	otelShutdown, err := otel.Setup(ctx, otel.WithErrorHandler(&otel.DiscardErrorHandler{}))
 	if err != nil {
 		return fmt.Errorf("failed to setup otel: %w", err)
 	}

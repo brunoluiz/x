@@ -21,6 +21,10 @@ type config struct {
 	errorHandler otel.ErrorHandler
 }
 
+type DiscardErrorHandler struct{}
+
+func (DiscardErrorHandler) Handle(error) {}
+
 func WithErrorHandler(h otel.ErrorHandler) Option {
 	return func(c *config) {
 		c.errorHandler = h
