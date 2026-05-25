@@ -21,7 +21,7 @@ type DB struct {
 
 func New(ctx context.Context, dsn string, opts ...option) (*DB, error) {
 	c := &config{
-		maxOpenConns:    25,
+		maxOpenConns:    100,
 		connMaxLifetime: 30 * time.Minute,
 		connMaxIdleTime: 5 * time.Minute,
 	}
