@@ -89,9 +89,9 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 		if !ok {
 			continue
 		}
-		if _, err := execer.ExecContext(ctx, p, nil); err != nil {
+		if _, execErr := execer.ExecContext(ctx, p, nil); execErr != nil {
 			conn.Close()
-			return nil, fmt.Errorf("executing pragma %q: %w", p, err)
+			return nil, fmt.Errorf("executing pragma %q: %w", p, execErr)
 		}
 	}
 

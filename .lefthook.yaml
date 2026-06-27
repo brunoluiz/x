@@ -1,12 +1,26 @@
+assert_lefthook_installed: true
+
+# All harnesses must commit progress at the end of a task
+# Triggering pre-commit hook
 pre-commit:
+  setup:
+    - run: "mise install"
+  # Runs for all files, leveraging Go and JS tooling cache
+  # Could run more selectively if I wanted to tweak it
   parallel: true
   commands:
     format:
-      run: make format
-pre-push:
-  parallel: true
-  commands:
+      run: "mise format:check"
     lint:
-      run: make lint
+      run: "mise lint"
     test:
-      run: make test
+      run: "mise test"
+    codegraph:
+      run: "codegraph index"
+
+# Ensures all commits come in conventional format
+# and plenty enough details
+commit-msg:
+  commands:
+    conventional-commit:
+      run: 'bash .scripts/validate-commit-message.sh "{1}"'

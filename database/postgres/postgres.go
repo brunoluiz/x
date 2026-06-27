@@ -21,7 +21,7 @@ type DB struct {
 	pool *pgxpool.Pool
 }
 
-func New(ctx context.Context, dsn string, opts ...option) (*DB, error) {
+func New(ctx context.Context, dsn string, opts ...Option) (*DB, error) {
 	c := &config{
 		maxOpenConns:    100,
 		connMaxLifetime: 30 * time.Minute,
