@@ -11,8 +11,10 @@ import (
 
 type config struct {
 	maxOpenConns    int32
+	minConns        int32
 	connMaxLifetime time.Duration
 	connMaxIdleTime time.Duration
+	tracerName      string
 }
 
 type DB struct {
@@ -24,24 +26,26 @@ func New(ctx context.Context, dsn string, opts ...option) (*DB, error) {
 		maxOpenConns:    100,
 		connMaxLifetime: 30 * time.Minute,
 		connMaxIdleTime: 5 * time.Minute,
+		tracerName:      "pgx",
 	}
 	for _, opt := range opts {
 		opt(c)
 	}
 
-	config, err := pgxpool.ParseConfig(dsn)
+	poolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parsing postgres DSN: %w", err)
 	}
-	config.MaxConns = c.maxOpenConns
-	config.MaxConnLifetime = c.connMaxLifetime
-	config.MaxConnIdleTime = c.connMaxIdleTime
-	config.ConnConfig.Tracer = &pgxotel.QueryTracer{
-		Name: "pgx",
+	poolConfig.MaxConns = c.maxOpenConns
+	poolConfig.MinConns = c.minConns
+	poolConfig.MaxConnLifetime = c.connMaxLifetime
+	poolConfig.MaxConnIdleTime = c.connMaxIdleTime
+	poolConfig.ConnConfig.Tracer = &pgxotel.QueryTracer{
+		Name: c.tracerName,
 	}
-	pool, err := pgxpool.NewWithConfig(ctx, config)
+	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating connection pool: %w", err)
 	}
 
 	db := &DB{pool: pool}
