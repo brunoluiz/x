@@ -2,10 +2,12 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pgx-contrib/pgxotel"
 )
 
@@ -18,7 +20,8 @@ type config struct {
 }
 
 type DB struct {
-	pool *pgxpool.Pool
+	pool  *pgxpool.Pool
+	sqlDB *sql.DB
 }
 
 func New(ctx context.Context, dsn string, opts ...Option) (*DB, error) {
@@ -48,9 +51,11 @@ func New(ctx context.Context, dsn string, opts ...Option) (*DB, error) {
 		return nil, fmt.Errorf("creating connection pool: %w", err)
 	}
 
-	db := &DB{pool: pool}
+	sqlDB := stdlib.OpenDBFromPool(pool)
+	db := &DB{pool: pool, sqlDB: sqlDB}
 	if pingErr := db.Health(ctx); pingErr != nil {
 		db.pool.Close()
+		db.sqlDB.Close()
 		return nil, pingErr
 	}
 
@@ -74,6 +79,15 @@ func (db *DB) Health(ctx context.Context) error {
 	return nil
 }
 
-func (db *DB) Get() *pgxpool.Pool {
+// Get must only be used for migrations or libs that are not compatible with pgx... otherwise use Pgx
+func (db *DB) Get() *sql.DB {
+	return db.sqlDB
+}
+
+func (db *DB) Pgx() *pgxpool.Pool {
 	return db.pool
+}
+
+func (db *DB) Type() string {
+	return "pgx"
 }

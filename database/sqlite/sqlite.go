@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	mcsqlite "modernc.org/sqlite"
@@ -26,6 +29,10 @@ func New(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	c := defaultConfig()
 	for _, opt := range opts {
 		opt(&c)
+	}
+
+	if err := ensureParentDir(path); err != nil {
+		return nil, err
 	}
 
 	d := &mcsqlite.Driver{}
@@ -72,6 +79,10 @@ func (db *DB) Get() *sql.DB {
 	return db.db
 }
 
+func (db *DB) Type() string {
+	return "sqlite"
+}
+
 type connector struct {
 	d       *mcsqlite.Driver
 	dsn     string
@@ -100,4 +111,25 @@ func (c *connector) Connect(ctx context.Context) (driver.Conn, error) {
 
 func (c *connector) Driver() driver.Driver {
 	return c.d
+}
+
+func ensureParentDir(dsn string) error {
+	path := dsn
+
+	path = strings.TrimPrefix(path, "file:")
+
+	if idx := strings.IndexByte(path, '?'); idx >= 0 {
+		path = path[:idx]
+	}
+
+	if path == "" || path == ":memory:" || path == "." {
+		return nil
+	}
+
+	parent := filepath.Dir(path)
+	if err := os.MkdirAll(parent, 0o755); err != nil {
+		return fmt.Errorf("creating parent directory for %q: %w", path, err)
+	}
+
+	return nil
 }
