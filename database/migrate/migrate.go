@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io/fs"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
-	"github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
 type DB interface {
@@ -36,7 +37,7 @@ func WithVersion(v uint) Option {
 	}
 }
 
-func Run(db DB, migrationsDir string, opts ...Option) error {
+func Run(db DB, migrationsFS fs.FS, opts ...Option) error {
 	var c config
 	for _, opt := range opts {
 		opt(&c)
@@ -47,12 +48,12 @@ func Run(db DB, migrationsDir string, opts ...Option) error {
 		return err
 	}
 
-	src, err := (&file.File{}).Open(migrationsDir)
+	src, err := iofs.New(migrationsFS, ".")
 	if err != nil {
 		return fmt.Errorf("opening migrations source: %w", err)
 	}
 
-	m, err := migrate.NewWithInstance("file", src, db.Type(), drv)
+	m, err := migrate.NewWithInstance("iofs", src, db.Type(), drv)
 	if err != nil {
 		return fmt.Errorf("creating migrate instance: %w", err)
 	}
