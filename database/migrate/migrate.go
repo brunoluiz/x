@@ -37,7 +37,7 @@ func WithVersion(v uint) Option {
 	}
 }
 
-func Run(db DB, migrationsFS fs.FS, opts ...Option) error {
+func Run(db DB, migrationsFS fs.FS, opts ...Option) (err error) {
 	var c config
 	for _, opt := range opts {
 		opt(&c)
@@ -52,6 +52,15 @@ func Run(db DB, migrationsFS fs.FS, opts ...Option) error {
 	if err != nil {
 		return fmt.Errorf("opening migrations source: %w", err)
 	}
+	defer func() {
+		if closeErr := src.Close(); closeErr != nil {
+			if err == nil {
+				err = fmt.Errorf("closing migrations source: %w", closeErr)
+				return
+			}
+			err = errors.Join(err, fmt.Errorf("closing migrations source: %w", closeErr))
+		}
+	}()
 
 	m, err := migrate.NewWithInstance("iofs", src, db.Type(), drv)
 	if err != nil {
@@ -69,14 +78,6 @@ func Run(db DB, migrationsFS fs.FS, opts ...Option) error {
 
 	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("running migration: %w", err)
-	}
-
-	srcErr, dbErr := m.Close()
-	if srcErr != nil {
-		return fmt.Errorf("closing migrations source: %w", srcErr)
-	}
-	if dbErr != nil {
-		return fmt.Errorf("closing migrations database: %w", dbErr)
 	}
 
 	return nil
