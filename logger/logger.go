@@ -32,3 +32,7 @@ func New(opts ...Option) *slog.Logger {
 	}
 	return slog.New(slog.NewJSONHandler(os.Stdout, handlerOpts))
 }
+
+func Noop() *slog.Logger {
+	return slog.New(slog.DiscardHandler)
+}
