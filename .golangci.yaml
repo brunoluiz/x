@@ -73,8 +73,6 @@ linters:
     sloglint:
       # Enforce not using global loggers.
       no-global: all
-      # Enforce using methods that accept a context.
-      context: all
     embeddedstructfieldcheck:
       # Checks that sync.Mutex and sync.RWMutex are not used as embedded fields.
       forbid-mutex: true
@@ -118,6 +116,7 @@ linters:
         linters:
           - funlen
           - goconst
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0

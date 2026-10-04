@@ -1,5 +1,5 @@
 [tasks.test]
-run = "go test ./..."
+run = 'for module in core/v2 logger/v2 http/v2 o11y/v2 otel/v2 database/postgres/v2 database/postgres/otel/v2 database/sqlite/v2 database/migrate/v2 app/v2 connectrpc/v2 samples; do (cd "$module" && go test ./...) || exit 1; done'
 
 [tasks."format:check"]
 run = '[ -z "$(gofumpt -d .)" ] && echo "No formatting needed" || echo "gofumpt failed"'
@@ -8,10 +8,10 @@ run = '[ -z "$(gofumpt -d .)" ] && echo "No formatting needed" || echo "gofumpt 
 run = "gofumpt -l -w ."
 
 [tasks.generate]
-run = "go generate ./..."
+run = 'for module in core/v2 logger/v2 http/v2 o11y/v2 otel/v2 database/postgres/v2 database/postgres/otel/v2 database/sqlite/v2 database/migrate/v2 app/v2 connectrpc/v2 samples; do (cd "$module" && go generate ./...) || exit 1; done'
 
 [tasks.lint]
-run = "golangci-lint run ./..."
+run = 'for module in core/v2 logger/v2 http/v2 o11y/v2 otel/v2 database/postgres/v2 database/postgres/otel/v2 database/sqlite/v2 database/migrate/v2 app/v2 connectrpc/v2 samples; do (cd "$module" && golangci-lint run ./...) || exit 1; done'
 
 [tools]
 gofumpt = "0.9.1"

@@ -1,0 +1,30 @@
+go 1.25.3
+
+use (
+	./app/v2
+	./connectrpc/v2
+	./core/v2
+	./database/migrate/v2
+	./database/postgres/otel/v2
+	./database/postgres/v2
+	./database/sqlite/v2
+	./http/v2
+	./logger/v2
+	./o11y/v2
+	./otel/v2
+	./samples
+)
+
+replace (
+	github.com/brunoluiz/x/app/v2 v2.0.0 => ./app/v2
+	github.com/brunoluiz/x/connectrpc/v2 v2.0.0 => ./connectrpc/v2
+	github.com/brunoluiz/x/core/v2 v2.0.0 => ./core/v2
+	github.com/brunoluiz/x/database/migrate/v2 v2.0.0 => ./database/migrate/v2
+	github.com/brunoluiz/x/database/postgres/otel/v2 v2.0.0 => ./database/postgres/otel/v2
+	github.com/brunoluiz/x/database/postgres/v2 v2.0.0 => ./database/postgres/v2
+	github.com/brunoluiz/x/database/sqlite/v2 v2.0.0 => ./database/sqlite/v2
+	github.com/brunoluiz/x/http/v2 v2.0.0 => ./http/v2
+	github.com/brunoluiz/x/logger/v2 v2.0.0 => ./logger/v2
+	github.com/brunoluiz/x/o11y/v2 v2.0.0 => ./o11y/v2
+	github.com/brunoluiz/x/otel/v2 v2.0.0 => ./otel/v2
+)
